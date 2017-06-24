@@ -20,6 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Utility class with methods to help perform the HTTP request and
@@ -31,32 +32,36 @@ public final class Utils {
     public static final String LOG_TAG = Utils.class.getSimpleName();
 
     /**
-     * Return a list of {@link Earthquake} objects that has been built up from
+     * Return a list of {@link Book} objects that has been built up from
      * parsing a JSON response.
      */
     public static ArrayList<Book> extractBooks() {
 
-        // Create an empty ArrayList that we can start adding earthquakes to
-        ArrayList<Book> books = new ArrayList<>();
+        if (TextUtils.isEmpty(googleBookJSON)) {
+            return null;
+        }
 
-        // Try to parse the SAMPLE_JSON_RESPONSE. If there's a problem with the way the JSON
-        // is formatted, a JSONException exception object will be thrown.
-        // Catch the exception so the app doesn't crash, and print the error message to the logs.
+        // Create an empty ArrayList that we can start adding Books to
+        List<Book> Book = new ArrayList<>();
+
         try {
 
-            // Try to pass the JSONObject
-            // build up a list of Earthquake objects with the corresponding data.
-            JSONObject baseJsonResponse = new JSONObject(SAMPLE_JSON_RESPONSE);
-            JSONArray earthquakeArray = baseJsonResponse.getJSONArray("features");
+            JSONObject baseJsonResponse = new JSONObject(googleBookJSON);
+            JSONArray bookArray = baseJsonResponse.getJSONArray("items");
 
-            for( int i = 0; i < earthquakeArray.length(); i++) {
-                // All of our code in the loop
-                JSONObject currentEarthquake = earthquakeArray.getJSONObject(i);
-                JSONObject properties = currentEarthquake.getJSONObject("authors");
-                String location = properties.getString("title");
+            for( int i = 0; i < bookArray.length(); i++) {
+                // All of the code in the loop
+                JSONObject currentBook = bookArray.getJSONObject(i);
+                JSONObject volumeInfo = currentBook.getJSONObject("volumeInfo");
 
-                Book book = new Book(magnitude, location, time);
-                earthquakes.add(earthquake); // added new code.
+                // Extract out the title and author
+                String title = volumeInfo.getString("title");
+                JSONArray authors = null;
+                if (volumeInfo.has ("authors"))
+                    authors = volumeInfo.getJSONArray("authors")
+
+                Book book = new Book(title, authors.toString());
+                books.add(book); // added new code.
 
             }
 
@@ -67,8 +72,8 @@ public final class Utils {
             Log.e("QueryUtils", "Problem parsing the earthquake JSON results", e);
         }
 
-        // Return the list of earthquakes
-        return earthquakes;
+        // Return the list of book
+        return books;
     }
 
 

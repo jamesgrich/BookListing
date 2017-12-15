@@ -1,140 +1,137 @@
 package com.example.android.booklisting;
 
+import android.app.LoaderManager;
 import android.app.usage.UsageEvents;
+import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
+import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.os.AsyncTask;
 
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.app.LoaderManager.LoaderCallbacks;
+import android.content.Loader;
+import android.widget.Toast;
+
+
 /**
  * Created by jamesrichardson on 24/05/2017.
  */
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoaderCallbacks<List<Book>> {
 
     /**
      * URL for Google Books data from the Google
      */
-    private static final String GOOGLE_REQUEST_URL =
-            "https://www.googleapis.com/books/v1/volumes?q=android&maxResults=1";
 
-    // Adapter for the list of books
-    private BookAdapter mAdapter;
+    private static final String GOOGLE_REQUEST_URL = "https://www.googleapis.com/books/v1/volumes?maxResults=20&q=";
 
-    // TextView that is displayed when the list is empty and no items have been searched
-    private TextView mEmptyStateTextView;
+    /**
+     * Constant value for the book loader ID
+     */
+    private static final int BOOK_LOADER_ID = 0;
 
-    // EditText to capture the user's search term
-    private EditText mSearchEditTextView;
-
-    // Button to send the request for the search term
-    private Button mSearchButtonView;
+    private EditText querySearchBoxEdx;
+    private Button querysearchTrigerBtn;
+    private ListView bookListView;
+    private String query;
+    private TextView emptyStateTextView;
+    private BookAdapter bookAdapter;
+    private boolean hasPerformedInitialLoad;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Find a reference to the {@link ListVIre
+        querySearchBoxEdx = (EditText) findViewById(R.id.search_box);
+        querysearchTrigerBtn = (Button) findViewById(R.id.search_button);
+        bookListView = (ListView) findViewById(R.id.list);
+        emptyStateTextView = (TextView) findViewById(R.id.empty_text_view);
+        bookListView.setEmptyView(findViewById(R.id.empty_view_holder));
 
-        // Create an {@link AsyncTask} to perform the HTTP request to the given URL
-        // on a background thread. When the result is received on the main UI thread,
-        // then update the UI.
-        BookAsyncTask task = new BookAsyncTask();
-        task.execute(GOOGLE_REQUEST_URL);
+        bookAdapter = new BookAdapter(this, new ArrayList<Book>());
+        bookListView.setAdapter(bookAdapter);
 
-        // Find a reference the (@link ListView) in the layout
-        ListView bookListView = (ListView) findViewById(R.id.list);
-
-        // Create a new adapter that takes an empty list of Books as input
-        mAdapter = new BookAdapter(this, new ArrayList<Book>());
-
-        // List that will be populated with the Book searched
-        bookListView.setAdapter(mAdapter);
-
-        mEmptyStateTextView = (TextView) findViewById(R.id.empty_view);
-        bookListView.setEmptyView(mEmptyStateTextView);
-
-        mSearchEditTextView = (EditText) findViewById(R.id.search_editText);
-        mSearchButtonView = (Button) findViewById(R.id.search_button);
-
-        // Set a listener to the Button
-        mSearchButtonView.setOnClickListener(new View.OnClickListener() {
+        querysearchTrigerBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String searchTerm = mSearchEditTextView.getText().toString();
-                String updateQueryUrl = GOOGLE_REQUEST_URL + searchTerm;
+                if (!isNetworkAvailable(MainActivity.this)) {
+                    Toast.makeText(MainActivity.this, "No internet Connection", Toast.LENGTH_LONG).show();
+                } else {
+                    String queryKey = querySearchBoxEdx.getText().toString();
+                    String updatedUrl = GOOGLE_REQUEST_URL + queryKey;
+                    // Prepare the loader.  Either re-connect with an existing one,
+                    // or start a new one.
+                    Bundle bundle = new Bundle();
+                    bundle.putString("keyToUrl", updatedUrl);
 
-                DownloadTask task = new DownloadTask();
-                task.execute(updatedQueryUrl);
+                    if (hasPerformedInitialLoad == false) {
+                        getLoaderManager().initLoader(BOOK_LOADER_ID, bundle, MainActivity.this);
+                        hasPerformedInitialLoad = true;
+                    } else {
+                        //Restart the Loader upon the search query(execute the search)
+                        getLoaderManager().restartLoader(BOOK_LOADER_ID, bundle, MainActivity.this);
+                    }
+                }
             }
         });
+    }
 
-    String searchTerm = mSearchEditTextView.getText().toString();
-    String updatedQueryUrl = GOOGLE_REQUEST_URL + searchTerm;
+    /**
+     * Returns true if network is available or about to become available
+     */
+    public static boolean isNetworkAvailable(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+    }
 
-    DownloadTask task = new DownloadTask();
-    task.execute(updatedQueryUrl);
 
-    // Create a new adapter that takes an empty list of Books as input
-    mAdapter = new BookAdapter(this, new ArrayList<Book>());
+    @Override
+    public Loader<List<Book>> onCreateLoader(int i, Bundle bundle) {
+        Log.d("onCreateLoader", "This is the onCreateLoader");
+        // Retrieve the given query from the user
+        String requestUrl = bundle.getString("keyToUrl");
+        // Create a new loader for the given URL
+        Log.d("onCreateLoader", "This is the URL which I will use " + requestUrl);
+        return new BookLoader(this, requestUrl);
+    }
 
-    // List that will be populated with the Book searched
-        booklistView.setAdapter(mAdapter);
+    @Override
+    public void onLoadFinished(Loader<List<Book>> loader, List<Book> books) {
+
+        if (books == null) {
+            Log.d("onLoadFinished", "This a null books result");
+        } else {
+            Log.d("onLoadFinished", "This not a null books result" + books.size());
+        }
+        // Clear the adapter of previous Book data
+        bookAdapter.clear();
+
+        // If there is a valid list of {@link Book'}s, then add them to the adapter's
+        // data set. This will trigger the ListView to update.
+        if (books != null && !books.isEmpty()) {
+            bookAdapter.addAll(books);
         }
     }
 
-    private class BookAsyncTask extends AsyncTask<String, Void, Book> {
-
-    /**
-     * {@link AsyncTask} to perform the network request on a background thread, and then
-     * update the UI with the first earthquake in the response.
-     */
-
-        @Override
-        protected Book doInBackground(String... urls) {
-            // Don't perform the request if there are no URLs, or the first URL is null.
-            if (urls.length < 1 || urls[0] == null) {
-                return null;
-            }
-            Book result = Utils.fetchData(urls[0]);
-            return result;
-        }
-
-        private void updateUi(List<Book> Book) {
-            // Hooks the data to the Adapter
-            mAdapter.clear();
-            mAdapter.addAll(Book);
-            mAdapter.notifyDataSetChanged();
-        }
-
-        private class DownloadTask extends AsyncTask<String, Void, List<Book>> {}
-
-        /**
-         * This method is invoked on the main UI thread after the background work has been
-         * completed.
-         * <p>
-         * It IS okay to modify the UI within this method. We take the {@link Book} object
-         * (which was returned from the doInBackground() method) and update the views on the screen.
-         */
-        protected void onPostExecute(Book result) {
-            // If there is no result, do nothing.
-            if (result == null) {
-                return;
-            }
-        }
+    @Override
+    public void onLoaderReset(Loader<List<Book>> loader) {
+        Log.d("onLoadReset", "This is the onLoadReset");
+        // Loader reset, so we can clear out our existing data.
+        bookAdapter.clear();
     }
 }

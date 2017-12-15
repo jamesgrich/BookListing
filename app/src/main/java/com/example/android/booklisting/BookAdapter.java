@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -29,8 +30,7 @@ public class BookAdapter extends ArrayAdapter<Book> {
         ViewHolder viewHolder;
         // Checking to see if the view is being reused, otherwise inflate the view
         if (convertView == null) {
-            convertView = LayoutInflater.from(getContext()).inflate(
-                    R.layout.list_item, parent, false);
+            convertView = LayoutInflater.from(getContext()).inflate(R.layout.book_list, parent, false);
 
             viewHolder = new ViewHolder();
             viewHolder.text1 = (TextView) convertView.findViewById(R.id.authorName);
@@ -42,13 +42,13 @@ public class BookAdapter extends ArrayAdapter<Book> {
             viewHolder = (ViewHolder) convertView.getTag();
         }
         // Get the {@link Book} object located at this position in the list
-        Book currentAttraction = getItem(position);
+        Book currentBook = getItem(position);
 
         // Set this text on the name TextView
-        viewHolder.text1.setText(currentAttraction.getAuthorName());
+        viewHolder.text1.setText(currentBook.getAuthorName());
 
         // Set this text on the name TextView
-        viewHolder.text2.setText(currentAttraction.getTitleInformation());
+        viewHolder.text2.setText(currentBook.getTitleInformation());
 
         // Return the whole list item layout (containing 1 TextView and an ImageView)
         // so that it can be shown in the ListView

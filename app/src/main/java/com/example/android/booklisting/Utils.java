@@ -28,59 +28,15 @@ import java.util.List;
  */
 public final class Utils {
 
-    /** Tag for the log messages */
-    public static final String LOG_TAG = Utils.class.getSimpleName();
-
     /**
-     * Return a list of {@link Book} objects that has been built up from
-     * parsing a JSON response.
+     * Tag for the log messages
      */
-    public static ArrayList<Book> extractBooks() {
-
-        if (TextUtils.isEmpty(googleBookJSON)) {
-            return null;
-        }
-
-        // Create an empty ArrayList that we can start adding Books to
-        List<Book> Book = new ArrayList<>();
-
-        try {
-
-            JSONObject baseJsonResponse = new JSONObject(googleBookJSON);
-            JSONArray bookArray = baseJsonResponse.getJSONArray("items");
-
-            for( int i = 0; i < bookArray.length(); i++) {
-                // All of the code in the loop
-                JSONObject currentBook = bookArray.getJSONObject(i);
-                JSONObject volumeInfo = currentBook.getJSONObject("volumeInfo");
-
-                // Extract out the title and author
-                String title = volumeInfo.getString("title");
-                JSONArray authors = null;
-                if (volumeInfo.has ("authors"))
-                    authors = volumeInfo.getJSONArray("authors")
-
-                Book book = new Book(title, authors.toString());
-                books.add(book); // added new code.
-
-            }
-
-        } catch (JSONException e) {
-            // If an error is thrown when executing any of the above statements in the "try" block,
-            // catch the exception here, so the app doesn't crash. Print a log message
-            // with the message from the exception.
-            Log.e("QueryUtils", "Problem parsing the earthquake JSON results", e);
-        }
-
-        // Return the list of book
-        return books;
-    }
-
+    public static final String LOG_TAG = Utils.class.getSimpleName();
 
     /**
      * Query the USGS dataset and return an {@link Book} object to represent a single earthquake.
      */
-    public static Book fetchData(String requestUrl) {
+    public static List<Book> fetchData(String requestUrl) {
         // Create URL object
         URL url = createUrl(requestUrl);
 
@@ -93,7 +49,7 @@ public final class Utils {
         }
 
         // Extract relevant fields from the JSON response and create an {@link Event} object
-        Book book = extractFeatureFromJson(jsonResponse);
+        List<Book> book = extractFeatureFromJson(jsonResponse);
 
         // Return the {@link Event}
         return book;
@@ -105,6 +61,7 @@ public final class Utils {
     private static URL createUrl(String stringUrl) {
         URL url = null;
         try {
+            Log.d("createUrl", "This is the " + stringUrl);
             url = new URL(stringUrl);
         } catch (MalformedURLException e) {
             Log.e(LOG_TAG, "Error with creating URL ", e);
@@ -175,7 +132,7 @@ public final class Utils {
      * Return an {@link Book} object by parsing out information
      * about the first book from the input bookJSON string.
      */
-    private static Book extractFeatureFromJson(String bookJSON) {
+    private static List<Book> extractFeatureFromJson(String bookJSON) {
         // If the JSON string is empty or null, then return early.
         if (TextUtils.isEmpty(bookJSON)) {
             return null;
@@ -183,27 +140,40 @@ public final class Utils {
 
         try {
             JSONObject baseJsonResponse = new JSONObject(bookJSON);
-            JSONArray itemsArray = baseJsonResponse.getJSONArray("items");
-            Log.d("itemsArray", "This is the items array"+itemsArray.toString());
+            if (baseJsonResponse.has("items")) {
+                JSONArray itemsArray = baseJsonResponse.getJSONArray("items");
 
-            // If there are results in the items array
-            if (itemsArray.length() > 0) {
-                // Extract out the first items
-                JSONObject firstItem = itemsArray.getJSONObject(0);
-                JSONObject volumeInfo = firstItem.getJSONObject("volumeInfo");
-                Log.d("volumeInfo", "This is the volumesInfo"+volumeInfo.toString());
+                Log.d("itemsArray", "This is the items array" + itemsArray.toString());
 
-                // Extract out the title, number of people, and perceived strength values
-                String title = volumeInfo.getString("title");
+                List<Book> bookList = new ArrayList<>();
+                // If there are results in the items array
+                if (itemsArray.length() > 0) {
 
-                // Extract out the second item
-                JSONArray authorsArray = volumeInfo.getJSONArray("authors");
-                Log.d("authorsArray", "This is the authors array"+authorsArray.toString());
+                    for (int i = 0; i <= itemsArray.length() - 1; i++) {
+                        // Extract out the first items
+                        if (baseJsonResponse.has("items")) {
+                            JSONObject firstItem = itemsArray.getJSONObject(i);
+                            JSONObject volumeInfo = firstItem.getJSONObject("volumeInfo");
+                            Log.d("volumeInfo", "This is the volumesInfo" + volumeInfo.toString());
 
-                String firstAuthor = authorsArray.getString(0);
+                            // Extract out the title, number of people, and perceived strength values
+                            String title = volumeInfo.getString("title");
+                            String authors = "N/A";
+                            if (volumeInfo.has("authors")) {
+                                // Extract out the second item
+                                JSONArray authorsArray = volumeInfo.getJSONArray("authors");
+                                // Convert all authors int one String
+                                authors = authorsArray.toString();
+                            }
 
-                // Create a new {@link Event} object
-                return new Book(firstAuthor,title);
+                            // Create a new {@link Event} object
+                            Book book = new Book(authors, title);
+                            bookList.add(book);
+                        }
+                    }
+                }
+
+                return bookList;
             }
         } catch (JSONException e) {
             Log.e(LOG_TAG, "Problem parsing the JSON results", e);

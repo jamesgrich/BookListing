@@ -34,7 +34,7 @@ public final class Utils {
     public static final String LOG_TAG = Utils.class.getSimpleName();
 
     /**
-     * Query the USGS dataset and return an {@link Book} object to represent a single earthquake.
+     * Query the Google API and return an {@link Book} object to represent a single book.
      */
     public static List<Book> fetchData(String requestUrl) {
         // Create URL object

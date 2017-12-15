@@ -33,7 +33,7 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity implements LoaderCallbacks<List<Book>> {
 
     /**
-     * URL for Google Books data from the Google
+     * URL for Google Books data from the Google API
      */
 
     private static final String GOOGLE_REQUEST_URL = "https://www.googleapis.com/books/v1/volumes?maxResults=20&q=";

@@ -108,9 +108,9 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
     public void onLoadFinished(Loader<List<Book>> loader, List<Book> books) {
 
         if (books == null) {
-            Log.d("onLoadFinished", "This a null books result");
+            Log.d("onLoadFinished", "This is a null books result");
         } else {
-            Log.d("onLoadFinished", "This not a null books result" + books.size());
+            Log.d("onLoadFinished", "This is not a null books result: " + books.size());
         }
         // Clear the adapter of previous Book data
         bookAdapter.clear();

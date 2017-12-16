@@ -1,23 +1,17 @@
 package com.example.android.booklisting;
 
-import android.app.LoaderManager;
-import android.app.usage.UsageEvents;
 import android.content.Context;
-import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,8 +37,8 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
      */
     private static final int BOOK_LOADER_ID = 0;
 
-    private EditText querySearchBoxEdx;
-    private Button querysearchTrigerBtn;
+    private EditText querySearchBox;
+    private Button querySearchButton;
     private ListView bookListView;
     private String query;
     private TextView emptyStateTextView;
@@ -56,8 +50,8 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        querySearchBoxEdx = (EditText) findViewById(R.id.search_box);
-        querysearchTrigerBtn = (Button) findViewById(R.id.search_button);
+        querySearchBox = (EditText) findViewById(R.id.search_box);
+        querySearchButton = (Button) findViewById(R.id.search_button);
         bookListView = (ListView) findViewById(R.id.list);
         emptyStateTextView = (TextView) findViewById(R.id.empty_text_view);
         bookListView.setEmptyView(findViewById(R.id.empty_view_holder));
@@ -65,13 +59,13 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<L
         bookAdapter = new BookAdapter(this, new ArrayList<Book>());
         bookListView.setAdapter(bookAdapter);
 
-        querysearchTrigerBtn.setOnClickListener(new View.OnClickListener() {
+        querySearchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!isNetworkAvailable(MainActivity.this)) {
                     Toast.makeText(MainActivity.this, "No internet Connection", Toast.LENGTH_LONG).show();
                 } else {
-                    String queryKey = querySearchBoxEdx.getText().toString();
+                    String queryKey = querySearchBox.getText().toString();
                     String updatedUrl = GOOGLE_REQUEST_URL + queryKey;
                     // Prepare the loader.  Either re-connect with an existing one,
                     // or start a new one.
